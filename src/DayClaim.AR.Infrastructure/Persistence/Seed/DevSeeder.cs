@@ -137,9 +137,10 @@ public static class DevSeeder
         Username = username,
         Email = email,
         DisplayName = displayName,
-        // Dev-only fixed password so the seeded demo accounts are documented and reproducible.
-        // Never seed a fixed password in a real environment — see docs/SECURITY.md.
-        PasswordHash = hasher.Hash("DayClaim@12345"),
+        // Dev-only fixed password ("admin") so the seeded demo accounts are simple and
+        // reproducible for local testing. Never seed a fixed/weak password in a real
+        // environment — see docs/SECURITY.md.
+        PasswordHash = hasher.Hash("admin"),
         IsActive = true,
     };
 

@@ -128,7 +128,7 @@ file needs to change.
 ## 7. Local development
 
 ```bash
-cd backend/docker
+cd docker
 cp .env.example .env    # fill in real values — see comments in the file
 docker compose up -d --build
 # API:      http://localhost:8080/swagger
@@ -136,4 +136,4 @@ docker compose up -d --build
 ```
 
 Seeded demo accounts (Development only — see `Persistence/Seed/DevSeeder.cs`):
-`admin` / `vikram.rao` / `priya.s` / `rahul.m`, password `DayClaim@12345` for all.
+`admin` / `vikram.rao` / `priya.s` / `rahul.m`, password `admin` for all.

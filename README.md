@@ -21,7 +21,7 @@ docker compose up -d --build
 In `Development` (the Compose default), the API auto-applies EF Core
 migrations and seeds demo data on startup — see
 `src/DayClaim.AR.Infrastructure/Persistence/Seed/DevSeeder.cs`. Demo accounts,
-all with password `DayClaim@12345`:
+all with password `admin`:
 
 | Username | Role |
 |---|---|
@@ -34,7 +34,7 @@ all with password `DayClaim@12345`:
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"DayClaim@12345"}' | jq -r .accessToken)
+  -d '{"username":"admin","password":"admin"}' | jq -r .accessToken)
 
 curl -s http://localhost:8080/api/v1/rule-engine/rules \
   -H "Authorization: Bearer $TOKEN" | jq
