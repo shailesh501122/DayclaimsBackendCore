@@ -1,0 +1,12 @@
+namespace DayClaim.AR.Application.Common.Models;
+
+public class PagedResult<T>
+{
+    public IReadOnlyCollection<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+
+    public static PagedResult<T> Create(IReadOnlyCollection<T> items, int totalCount, int page, int pageSize) =>
+        new() { Items = items, TotalCount = totalCount, Page = page, PageSize = pageSize };
+}

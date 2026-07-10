@@ -1,0 +1,100 @@
+name: dayclaim-ar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dayclaim_ar
+      POSTGRES_USER: ${POSTGRES_USER:-dayclaim_ar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - dayclaim_ar_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dayclaim_ar} -d dayclaim_ar"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-dayclaim_ar}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ar-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=dayclaim_ar;Username=${POSTGRES_USER:-dayclaim_ar};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      Jwt__Issuer: ${JWT_ISSUER:-dayclaim-ar-api}
+      Jwt__Audience: ${JWT_AUDIENCE:-dayclaim-ar-clients}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in .env (32+ chars)}
+      Encryption__DataKey: ${ENCRYPTION_DATA_KEY:?set ENCRYPTION_DATA_KEY in .env (base64, 32 bytes)}
+      Encryption__BlindIndexKey: ${ENCRYPTION_BLIND_INDEX_KEY:?set ENCRYPTION_BLIND_INDEX_KEY in .env (base64, 32 bytes)}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-dayclaim_ar}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    restart: unless-stopped
+    depends_on:
+      ar-api:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Jwt__Issuer: ${JWT_ISSUER:-dayclaim-ar-api}
+      Jwt__Audience: ${JWT_AUDIENCE:-dayclaim-ar-clients}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in .env (32+ chars)}
+    ports:
+      - "8000:8000"
+
+volumes:
+  dayclaim_ar_postgres_data:

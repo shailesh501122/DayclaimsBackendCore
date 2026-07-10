@@ -1,0 +1,31 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+COPY DayClaim.AR.sln ./
+COPY src/DayClaim.AR.Domain/DayClaim.AR.Domain.csproj src/DayClaim.AR.Domain/
+COPY src/DayClaim.AR.Application/DayClaim.AR.Application.csproj src/DayClaim.AR.Application/
+COPY src/DayClaim.AR.Infrastructure/DayClaim.AR.Infrastructure.csproj src/DayClaim.AR.Infrastructure/
+COPY src/DayClaim.AR.Api/DayClaim.AR.Api.csproj src/DayClaim.AR.Api/
+COPY src/DayClaim.AR.Gateway/DayClaim.AR.Gateway.csproj src/DayClaim.AR.Gateway/
+COPY tests/DayClaim.AR.UnitTests/DayClaim.AR.UnitTests.csproj tests/DayClaim.AR.UnitTests/
+RUN dotnet restore src/DayClaim.AR.Api/DayClaim.AR.Api.csproj
+
+COPY src/ src/
+
+RUN dotnet publish src/DayClaim.AR.Api/DayClaim.AR.Api.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+WORKDIR /app
+
+# Non-root: least-privilege container, per docs/SECURITY.md.
+RUN addgroup -S dayclaim && adduser -S dayclaim -G dayclaim
+USER dayclaim
+
+COPY --from=build --chown=dayclaim:dayclaim /app .
+
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 CMD wget -q -O- http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "DayClaim.AR.Api.dll"]
