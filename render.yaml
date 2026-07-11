@@ -5,7 +5,11 @@ services:
     dockerfilePath: ./docker/Dockerfile.api
     dockerContext: .
     plan: free
-    healthCheckPath: /health
+    # /health/live has no Postgres/Redis dependency — it only confirms the
+    # process is up — so an unprovisioned Redis (or a slow-to-connect
+    # Postgres) can never fail this probe and kill an otherwise-healthy
+    # deploy. Use /health (Postgres+Redis checks) for real uptime monitoring.
+    healthCheckPath: /health/live
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -67,6 +71,15 @@ services:
         value: Production
       - key: ASPNETCORE_URLS
         value: http://+:8000
+      # ocelot.json's default downstream host ("ar-api") only resolves inside
+      # Docker Compose's network — on Render, the AR API is a separate public
+      # service, so route to it by its real hostname instead.
+      - key: ArApi__Host
+        value: dayclaim-ar-api.onrender.com
+      - key: ArApi__Port
+        value: "443"
+      - key: ArApi__Scheme
+        value: https
       - key: Jwt__Issuer
         value: dayclaim-ar-api
       - key: Jwt__Audience

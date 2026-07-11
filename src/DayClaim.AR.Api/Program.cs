@@ -4,8 +4,10 @@ using DayClaim.AR.Application;
 using DayClaim.AR.Infrastructure;
 using DayClaim.AR.Infrastructure.Persistence;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
@@ -76,9 +78,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// "ready" checks hit Postgres/Redis and are for real monitoring — they must
+// NOT gate the platform's own startup health probe, or a not-yet-provisioned
+// dependency (e.g. Redis) would make the platform kill an otherwise-fine deploy.
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("Postgres") ?? string.Empty, name: "postgres")
-    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", name: "redis");
+    .AddNpgSql(builder.Configuration.GetConnectionString("Postgres") ?? string.Empty, name: "postgres", tags: ["ready"])
+    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379", name: "redis", tags: ["ready"]);
 
 var app = builder.Build();
 
@@ -88,11 +93,35 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+app.UseHttpsRedirection();
+app.UseCors("Frontend");
+app.UseRateLimiter();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+// /health/live has no dependency checks — it just confirms Kestrel is up —
+// and is what the platform's own startup probe should hit. /health runs the
+// "ready" (Postgres/Redis) checks for real uptime monitoring, and is allowed
+// to report 503 without that killing the deploy.
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+
 // Schema migration is safe to run unconditionally — it's just DDL, no
 // credentials involved (see docs/ARCHITECTURE.md §6 re: a real deployment
-// should eventually do this as a separate release step instead).
-using (var scope = app.Services.CreateScope())
+// should eventually do this as a separate release step instead). It runs
+// AFTER app.Run() below has bound Kestrel to its port — this must never be
+// awaited inline before app.Run(), or a slow/unreachable database delays
+// port binding past the platform's health-check timeout and fails the
+// deploy even though the app itself is fine.
+var migrationTask = Task.Run(async () =>
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
@@ -114,6 +143,11 @@ using (var scope = app.Services.CreateScope())
             startupLogger.LogWarning(ex, "Migration attempt {Attempt}/{MaxAttempts} failed, retrying in {DelaySeconds}s", attempt, maxAttempts, delay.TotalSeconds);
             await Task.Delay(delay);
         }
+        catch (Exception ex)
+        {
+            startupLogger.LogError(ex, "Migration failed after {MaxAttempts} attempts", maxAttempts);
+            return;
+        }
     }
 
     // Demo-data seeding creates a well-known admin/admin account (see
@@ -124,22 +158,10 @@ using (var scope = app.Services.CreateScope())
     {
         await DayClaim.AR.Infrastructure.Persistence.Seed.DevSeeder.SeedAsync(scope.ServiceProvider);
     }
-}
+});
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseMiddleware<SecurityHeadersMiddleware>();
-
-app.UseHttpsRedirection();
-app.UseCors("Frontend");
-app.UseRateLimiter();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-app.MapHealthChecks("/health");
-
-app.Run();
+var runTask = app.RunAsync();
+await Task.WhenAll(migrationTask, runTask);
 
 public partial class Program
 {

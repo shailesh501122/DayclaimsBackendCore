@@ -33,7 +33,7 @@
     {
       "UpstreamPathTemplate": "/gateway/health",
       "UpstreamHttpMethod": [ "Get" ],
-      "DownstreamPathTemplate": "/health",
+      "DownstreamPathTemplate": "/health/live",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [ { "Host": "ar-api", "Port": 8080 } ]
     }
