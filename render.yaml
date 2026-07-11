@@ -30,6 +30,16 @@ services:
         sync: false
       - key: RabbitMq__Password
         sync: false
+      # For a hosted broker like CloudAMQP: VirtualHost is the vhost name from
+      # your instance's AMQP URL (amqps://user:pass@host/VHOST — NOT "/"),
+      # Port is 5671, UseTls is "true". Leave all three unset for the local
+      # Docker Compose stack (defaults: "/", 5672, false).
+      - key: RabbitMq__VirtualHost
+        sync: false
+      - key: RabbitMq__Port
+        sync: false
+      - key: RabbitMq__UseTls
+        sync: false
       - key: Jwt__Issuer
         value: dayclaim-ar-api
       - key: Jwt__Audience

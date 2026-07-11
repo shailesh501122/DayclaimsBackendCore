@@ -44,10 +44,21 @@ public static class DependencyInjection
         {
             bus.UsingRabbitMq((context, cfg) =>
             {
-                cfg.Host(configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+                // VirtualHost defaults to "/" for local Docker Compose's stock RabbitMQ image,
+                // but hosted brokers (e.g. CloudAMQP) assign a per-account vhost — must be
+                // configurable, not hardcoded, or every publish fails against a real provider.
+                var virtualHost = configuration["RabbitMq:VirtualHost"] ?? "/";
+                var port = configuration.GetValue<ushort?>("RabbitMq:Port");
+                var useTls = configuration.GetValue("RabbitMq:UseTls", false);
+
+                cfg.Host(configuration["RabbitMq:Host"] ?? "localhost", port ?? 5672, virtualHost, h =>
                 {
                     h.Username(configuration["RabbitMq:Username"] ?? "guest");
                     h.Password(configuration["RabbitMq:Password"] ?? "guest");
+                    if (useTls)
+                    {
+                        h.UseSsl(ssl => ssl.Protocol = System.Security.Authentication.SslProtocols.Tls12);
+                    }
                 });
                 cfg.ConfigureEndpoints(context);
             });
