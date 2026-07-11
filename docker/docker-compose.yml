@@ -61,6 +61,10 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # Local Compose is a throwaway dev stack, so seed the demo admin/data by
+      # default — unlike render.yaml, which hardcodes "false" for anything
+      # holding real data. Override with SEED_DEMO_DATA=false in .env to skip.
+      SeedDemoData: ${SEED_DEMO_DATA:-true}
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=dayclaim_ar;Username=${POSTGRES_USER:-dayclaim_ar};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
       Jwt__Issuer: ${JWT_ISSUER:-dayclaim-ar-api}

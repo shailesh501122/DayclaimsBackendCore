@@ -49,7 +49,7 @@ public static class DevSeeder
 
         Role RoleByName(string name) => roles.First(r => r.Name == name);
 
-        var admin = NewUser("admin", "admin@dayclaim.ai", "DayClaim Admin", passwordHasher, now);
+        var admin = NewUser("Admin", "admin@dayclaim.ai", "DayClaim Admin", passwordHasher, now, "Admin@123");
         admin.UserRoles.Add(new UserRole { UserId = admin.Id, User = admin, RoleId = RoleByName("SuperAdmin").Id });
 
         var supervisor = NewUser("vikram.rao", "vikram.rao@dayclaim.ai", "Vikram Rao", passwordHasher, now);
@@ -130,17 +130,17 @@ public static class DevSeeder
         await db.SaveChangesAsync();
     }
 
-    private static User NewUser(string username, string email, string displayName, IPasswordHasher hasher, DateTimeOffset now) => new()
+    private static User NewUser(string username, string email, string displayName, IPasswordHasher hasher, DateTimeOffset now, string password = "admin") => new()
     {
         Id = IdGenerator.NewId(),
         CreatedAtUtc = now,
         Username = username,
         Email = email,
         DisplayName = displayName,
-        // Dev-only fixed password ("admin") so the seeded demo accounts are simple and
+        // Dev-only fixed password so the seeded demo accounts are simple and
         // reproducible for local testing. Never seed a fixed/weak password in a real
         // environment — see docs/SECURITY.md.
-        PasswordHash = hasher.Hash("admin"),
+        PasswordHash = hasher.Hash(password),
         IsActive = true,
     };
 

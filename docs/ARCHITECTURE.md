@@ -135,5 +135,6 @@ docker compose up -d --build
 # Gateway:  http://localhost:8000/gateway/...
 ```
 
-Seeded demo accounts (Development only — see `Persistence/Seed/DevSeeder.cs`):
-`admin` / `vikram.rao` / `priya.s` / `rahul.m`, password `admin` for all.
+Seeded demo accounts (opt-in via `SeedDemoData=true` — see
+`Persistence/Seed/DevSeeder.cs`): `Admin` / `Admin@123` (SuperAdmin), plus
+`vikram.rao` / `priya.s` / `rahul.m`, password `admin` for those three.

@@ -19,22 +19,22 @@ docker compose up -d --build
 - RabbitMQ management UI: http://localhost:15672
 
 In `Development` (the Compose default), the API auto-applies EF Core
-migrations and seeds demo data on startup — see
-`src/DayClaim.AR.Infrastructure/Persistence/Seed/DevSeeder.cs`. Demo accounts,
-all with password `admin`:
+migrations and seeds demo data on startup (set `SeedDemoData=true`, the
+Compose default) — see
+`src/DayClaim.AR.Infrastructure/Persistence/Seed/DevSeeder.cs`. Demo accounts:
 
-| Username | Role |
-|---|---|
-| `admin` | SuperAdmin |
-| `vikram.rao` | Supervisor |
-| `priya.s`, `rahul.m` | User |
+| Username | Password | Role |
+|---|---|---|
+| `Admin` | `Admin@123` | SuperAdmin |
+| `vikram.rao` | `admin` | Supervisor |
+| `priya.s`, `rahul.m` | `admin` | User |
 
 ## Try it
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}' | jq -r .accessToken)
+  -d '{"username":"Admin","password":"Admin@123"}' | jq -r .accessToken)
 
 curl -s http://localhost:8080/api/v1/rule-engine/rules \
   -H "Authorization: Bearer $TOKEN" | jq
