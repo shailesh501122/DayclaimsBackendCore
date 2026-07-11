@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- ASP.NET Core defaults to Server GC, which allocates a heap per logical
+         core and can exceed a free-tier container's memory limit (crashing
+         with SIGSEGV/exit 139) even for a lean app. Workstation GC uses far
+         less memory and is the standard fix for small hosted containers. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
