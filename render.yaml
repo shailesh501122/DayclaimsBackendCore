@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: dayclaim-ar-api
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.api
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      # Schema migrations run on every startup regardless of environment
+      # (safe — just DDL). Demo-data seeding (creates a well-known
+      # admin/admin account) is a SEPARATE, deliberate opt-in — leave this
+      # false/unset for anything holding real data, flip to "true" only for
+      # a disposable demo deployment. See Program.cs and docs/SECURITY.md.
+      - key: SeedDemoData
+        value: "false"
+      # Set these in the Render dashboard (Environment tab) rather than here —
+      # they depend on which Postgres/Redis/RabbitMQ instances you provision.
+      - key: ConnectionStrings__Postgres
+        sync: false
+      - key: ConnectionStrings__Redis
+        sync: false
+      - key: RabbitMq__Host
+        sync: false
+      - key: RabbitMq__Username
+        sync: false
+      - key: RabbitMq__Password
+        sync: false
+      - key: Jwt__Issuer
+        value: dayclaim-ar-api
+      - key: Jwt__Audience
+        value: dayclaim-ar-clients
+      # generateValue creates a random secret once at first deploy — never a
+      # committed value. Rotate manually if it's ever suspected compromised.
+      - key: Jwt__SigningKey
+        generateValue: true
+      - key: Encryption__DataKey
+        generateValue: true
+      - key: Encryption__BlindIndexKey
+        generateValue: true
+      - key: Cors__AllowedOrigins__0
+        sync: false
+
+  - type: web
+    name: dayclaim-ar-gateway
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.gateway
+    dockerContext: .
+    plan: free
+    healthCheckPath: /gateway/health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8000
+      - key: Jwt__Issuer
+        value: dayclaim-ar-api
+      - key: Jwt__Audience
+        value: dayclaim-ar-clients
+      # Must match dayclaim-ar-api's Jwt__SigningKey exactly, or the gateway
+      # will reject every token the API issues. Copy it from that service's
+      # Environment tab after its first deploy generates it.
+      - key: Jwt__SigningKey
+        sync: false

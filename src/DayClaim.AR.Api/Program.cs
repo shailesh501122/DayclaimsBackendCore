@@ -86,12 +86,24 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
-    // Convenience only for local/dev Docker Compose — never do this in a real deployment.
-    using var scope = app.Services.CreateScope();
+// Schema migration is safe to run unconditionally — it's just DDL, no
+// credentials involved (see docs/ARCHITECTURE.md §6 re: a real deployment
+// should eventually do this as a separate release step instead).
+using (var scope = app.Services.CreateScope())
+{
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    await DayClaim.AR.Infrastructure.Persistence.Seed.DevSeeder.SeedAsync(scope.ServiceProvider);
+
+    // Demo-data seeding creates a well-known admin/admin account (see
+    // DevSeeder) — that must be an explicit, deliberate opt-in, never
+    // implied by environment name alone. Set SeedDemoData=true only for a
+    // throwaway/demo deployment, never one holding real client data.
+    if (builder.Configuration.GetValue("SeedDemoData", false))
+    {
+        await DayClaim.AR.Infrastructure.Persistence.Seed.DevSeeder.SeedAsync(scope.ServiceProvider);
+    }
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
