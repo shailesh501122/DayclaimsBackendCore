@@ -94,7 +94,27 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    // A freshly-created database and a freshly-created service can take a few
+    // extra seconds to become network-reachable to each other — retry with
+    // backoff instead of letting one transient connection failure crash the
+    // whole process on startup.
+    const int maxAttempts = 5;
+    for (var attempt = 1; ; attempt++)
+    {
+        try
+        {
+            await db.Database.MigrateAsync();
+            break;
+        }
+        catch (Exception ex) when (attempt < maxAttempts)
+        {
+            var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+            startupLogger.LogWarning(ex, "Migration attempt {Attempt}/{MaxAttempts} failed, retrying in {DelaySeconds}s", attempt, maxAttempts, delay.TotalSeconds);
+            await Task.Delay(delay);
+        }
+    }
 
     // Demo-data seeding creates a well-known admin/admin account (see
     // DevSeeder) — that must be an explicit, deliberate opt-in, never
