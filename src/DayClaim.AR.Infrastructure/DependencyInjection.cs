@@ -87,9 +87,10 @@ public static class DependencyInjection
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy(PolicyNames.InternalStaff, p => p.RequireRole("SuperAdmin", "SiteAdmin", "Supervisor", "User"))
-            .AddPolicy(PolicyNames.AdminOnly, p => p.RequireRole("SuperAdmin", "SiteAdmin"))
-            .AddPolicy(PolicyNames.SupervisorOrAbove, p => p.RequireRole("SuperAdmin", "SiteAdmin", "Supervisor"))
+            .AddPolicy(PolicyNames.InternalStaff, p => p.RequireRole("Admin", "Manager", "Supervisor", "User"))
+            .AddPolicy(PolicyNames.AdminOnly, p => p.RequireRole("Admin"))
+            .AddPolicy(PolicyNames.UserManagement, p => p.RequireRole("Admin", "Manager"))
+            .AddPolicy(PolicyNames.SupervisorOrAbove, p => p.RequireRole("Admin", "Manager", "Supervisor"))
             .AddPolicy(PolicyNames.AnyAuthenticatedUser, p => p.RequireAuthenticatedUser());
 
         return services;

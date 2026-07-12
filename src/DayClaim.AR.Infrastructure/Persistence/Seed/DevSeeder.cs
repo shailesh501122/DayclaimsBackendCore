@@ -42,15 +42,19 @@ public static class DevSeeder
         };
         db.ClientOrganizations.Add(clientOrg);
 
-        var roles = new[] { "SuperAdmin", "SiteAdmin", "Supervisor", "User", "ClientAdmin", "ClientUser" }
-            .Select(name => new Role { Id = IdGenerator.NewId(), CreatedAtUtc = now, Name = name, IsClientRole = name.StartsWith("Client") })
+        var roles = new[] { "Admin", "Manager", "Supervisor", "User" }
+            .Select(name => new Role { Id = IdGenerator.NewId(), CreatedAtUtc = now, Name = name })
             .ToArray();
         db.Roles.AddRange(roles);
 
         Role RoleByName(string name) => roles.First(r => r.Name == name);
 
         var admin = NewUser("Admin", "admin@dayclaim.ai", "DayClaim Admin", passwordHasher, now, "Admin@123");
-        admin.UserRoles.Add(new UserRole { UserId = admin.Id, User = admin, RoleId = RoleByName("SuperAdmin").Id });
+        admin.UserRoles.Add(new UserRole { UserId = admin.Id, User = admin, RoleId = RoleByName("Admin").Id });
+
+        var manager = NewUser("sanjay.k", "sanjay.k@dayclaim.ai", "Sanjay Kulkarni", passwordHasher, now);
+        manager.UserRoles.Add(new UserRole { UserId = manager.Id, User = manager, RoleId = RoleByName("Manager").Id });
+        manager.UserOrganizations.Add(new UserOrganization { UserId = manager.Id, User = manager, ClientOrganizationId = clientOrg.Id });
 
         var supervisor = NewUser("vikram.rao", "vikram.rao@dayclaim.ai", "Vikram Rao", passwordHasher, now);
         supervisor.UserRoles.Add(new UserRole { UserId = supervisor.Id, User = supervisor, RoleId = RoleByName("Supervisor").Id });
@@ -64,7 +68,7 @@ public static class DevSeeder
         agent2.UserRoles.Add(new UserRole { UserId = agent2.Id, User = agent2, RoleId = RoleByName("User").Id });
         agent2.UserOrganizations.Add(new UserOrganization { UserId = agent2.Id, User = agent2, ClientOrganizationId = clientOrg.Id });
 
-        db.Users.AddRange(admin, supervisor, agent1, agent2);
+        db.Users.AddRange(admin, manager, supervisor, agent1, agent2);
 
         var importerConfig = new ImporterConfig
         {

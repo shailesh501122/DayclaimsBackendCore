@@ -25,7 +25,8 @@ Compose default) — see
 
 | Username | Password | Role |
 |---|---|---|
-| `Admin` | `Admin@123` | SuperAdmin |
+| `Admin` | `Admin@123` | Admin |
+| `sanjay.k` | `admin` | Manager |
 | `vikram.rao` | `admin` | Supervisor |
 | `priya.s`, `rahul.m` | `admin` | User |
 

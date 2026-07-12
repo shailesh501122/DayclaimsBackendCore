@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace DayClaim.AR.Application.Features.Users;
 
 /// <summary>
-/// Only Super Admin / Site Admin can create users (enforced by controller
-/// authorization policy — see docs/SECURITY.md RBAC matrix).
+/// Only Admin/Manager can create users (enforced by controller
+/// authorization policy — see docs/SECURITY.md RBAC matrix). A Manager may
+/// not grant the Admin or Manager role to a new account — only an Admin can.
 /// </summary>
 public record CreateUserCommand(
     string Username,
@@ -34,11 +35,18 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
     }
 }
 
-public class CreateUserCommandHandler(IApplicationDbContext db, IPasswordHasher passwordHasher)
+public class CreateUserCommandHandler(IApplicationDbContext db, IPasswordHasher passwordHasher, ICurrentUserService currentUser)
     : IRequestHandler<CreateUserCommand, UserDto>
 {
+    private static readonly HashSet<string> ElevatedRoles = new(StringComparer.OrdinalIgnoreCase) { "Admin", "Manager" };
+
     public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
+        if (!currentUser.IsInRole("Admin") && request.RoleNames.Any(ElevatedRoles.Contains))
+        {
+            throw new ForbiddenAccessException("Only an Admin can assign the Admin or Manager role.");
+        }
+
         var usernameTaken = await db.Users.AnyAsync(u => u.Username == request.Username, cancellationToken);
         if (usernameTaken)
         {

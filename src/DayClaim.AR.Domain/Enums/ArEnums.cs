@@ -95,20 +95,12 @@ public enum AllocationType
     SpecialProject = 3,
 }
 
-/// <summary>internal-staff roles (deck slide 22).</summary>
 public enum InternalRoleName
 {
-    SuperAdmin = 1,
-    SiteAdmin = 2,
+    Admin = 1,
+    Manager = 2,
     Supervisor = 3,
     User = 4,
-}
-
-/// <summary>Client-organization roles (deck slide 22).</summary>
-public enum ClientRoleName
-{
-    ClientAdmin = 1,
-    ClientUser = 2,
 }
 
 public enum ClientOrgSize

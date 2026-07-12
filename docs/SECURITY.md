@@ -37,10 +37,16 @@ Policies (`Application.Common.Authorization.PolicyNames`):
 
 | Policy | Roles | Used by |
 |---|---|---|
-| `InternalStaff` | SuperAdmin, SiteAdmin, Supervisor, User | (reserved for future internal-only reads) |
-| `AdminOnly` | SuperAdmin, SiteAdmin | User management, Rule CRUD |
-| `SupervisorOrAbove` | SuperAdmin, SiteAdmin, Supervisor | Importer config write, ingestion, rule execution, WFM |
+| `InternalStaff` | Admin, Manager, Supervisor, User | (reserved for future internal-only reads) |
+| `AdminOnly` | Admin | System-wide config, Rule CRUD |
+| `UserManagement` | Admin, Manager | User CRUD, role assignment (handlers additionally forbid a Manager granting Admin/Manager or editing an Admin account) |
+| `SupervisorOrAbove` | Admin, Manager, Supervisor | Importer config write, ingestion, rule execution, WFM |
 | `AnyAuthenticatedUser` | any valid token | Dashboard reads, notes |
+
+Role hierarchy, narrowest responsibility first: **User** (works assigned
+claims) → **Supervisor** (manages a team, approvals) → **Manager** (oversees
+Supervisors/teams org-wide) → **Admin** (full control, incl. user/role
+management).
 
 Role and client-org membership are carried as **JWT claims** (`role`, `org`),
 validated on every request by the JWT bearer middleware — not looked up
