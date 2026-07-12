@@ -43,6 +43,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer("Bearer", options =>
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        // Keep claim types exactly as issued — see the same setting in the AR
+        // API's DependencyInjection.cs for why this matters.
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

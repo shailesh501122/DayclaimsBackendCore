@@ -27,7 +27,7 @@ Compose default) — see
 |---|---|---|
 | `Admin` | `Admin@123` | Admin |
 | `sanjay.k` | `admin` | Manager |
-| `vikram.rao` | `admin` | Supervisor |
+| `vikram.rao` | `admin` | Team Leader |
 | `priya.s`, `rahul.m` | `admin` | User |
 
 ## Try it

@@ -86,6 +86,17 @@ public class UserOrganizationConfig : IEntityTypeConfiguration<UserOrganization>
     }
 }
 
+public class UserMenuAccessConfig : IEntityTypeConfiguration<UserMenuAccess>
+{
+    public void Configure(EntityTypeBuilder<UserMenuAccess> builder)
+    {
+        builder.ToTable("users_menu_access");
+        builder.HasKey(x => new { x.UserId, x.MenuPath });
+        builder.Property(x => x.MenuPath).HasMaxLength(300).IsRequired();
+        builder.HasOne(x => x.User).WithMany(u => u.MenuAccess).HasForeignKey(x => x.UserId);
+    }
+}
+
 public class RefreshTokenConfig : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)

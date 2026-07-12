@@ -137,5 +137,5 @@ docker compose up -d --build
 
 Seeded demo accounts (opt-in via `SeedDemoData=true` — see
 `Persistence/Seed/DevSeeder.cs`): `Admin` / `Admin@123` (Admin), plus
-`sanjay.k` (Manager), `vikram.rao` (Supervisor), `priya.s` / `rahul.m` (User) —
+`sanjay.k` (Manager), `vikram.rao` (Team Leader), `priya.s` / `rahul.m` (User) —
 password `admin` for those four.

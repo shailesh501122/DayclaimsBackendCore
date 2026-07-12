@@ -24,6 +24,7 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<UserRole> UserRoles { get; }
     DbSet<UserOrganization> UserOrganizations { get; }
+    DbSet<UserMenuAccess> UserMenuAccess { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
 
     DbSet<ImporterConfig> ImporterConfigs { get; }

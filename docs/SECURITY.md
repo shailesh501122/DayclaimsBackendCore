@@ -37,15 +37,15 @@ Policies (`Application.Common.Authorization.PolicyNames`):
 
 | Policy | Roles | Used by |
 |---|---|---|
-| `InternalStaff` | Admin, Manager, Supervisor, User | (reserved for future internal-only reads) |
+| `InternalStaff` | Admin, Manager, Team Leader, User | (reserved for future internal-only reads) |
 | `AdminOnly` | Admin | System-wide config, Rule CRUD |
 | `UserManagement` | Admin, Manager | User CRUD, role assignment (handlers additionally forbid a Manager granting Admin/Manager or editing an Admin account) |
-| `SupervisorOrAbove` | Admin, Manager, Supervisor | Importer config write, ingestion, rule execution, WFM |
+| `SupervisorOrAbove` | Admin, Manager, Team Leader | Importer config write, ingestion, rule execution, WFM |
 | `AnyAuthenticatedUser` | any valid token | Dashboard reads, notes |
 
 Role hierarchy, narrowest responsibility first: **User** (works assigned
-claims) → **Supervisor** (manages a team, approvals) → **Manager** (oversees
-Supervisors/teams org-wide) → **Admin** (full control, incl. user/role
+claims) → **Team Leader** (manages a team, approvals) → **Manager** (oversees
+Team Leaders/teams org-wide) → **Admin** (full control, incl. user/role
 management).
 
 Role and client-org membership are carried as **JWT claims** (`role`, `org`),
@@ -54,7 +54,7 @@ per-request from a mutable session store, and not something the client can
 influence after login.
 
 **Known gap**: controllers currently authorize by *role*, not yet by
-*client-org membership* — e.g. a Supervisor for Client A can currently call
+*client-org membership* — e.g. a Team Leader for Client A can currently call
 an endpoint passing Client B's `clientOrganizationId`. Closing this means
 adding an authorization filter that checks `ICurrentUserService.ClientOrganizationIds`
 contains the requested `clientOrganizationId` (or the caller is internal staff
@@ -104,7 +104,7 @@ refuses to start without real values in `.env` (which is gitignored).
   expressions are evaluated by a **hand-rolled, intentionally tiny**
   evaluator (`RuleConditionEvaluator`) — field/operator/value only, no
   `eval`, no reflection, no way for a rule author to run arbitrary code.
-- **RBAC-gated writes**: only Supervisor+ can create importer configs,
+- **RBAC-gated writes**: only Team Leader+ can create importer configs,
   ingest files, execute rules, or run allocations — a compromised low-
   privilege account can't rewrite claim classification rules.
 

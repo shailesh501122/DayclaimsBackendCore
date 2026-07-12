@@ -9,7 +9,7 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
 {
     private static readonly HashSet<string> InternalStaffRoles = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Admin", "Manager", "Supervisor", "User",
+        "Admin", "Manager", "Team Leader", "User",
     };
 
     private ClaimsPrincipal? Principal => httpContextAccessor.HttpContext?.User;

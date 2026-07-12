@@ -99,7 +99,7 @@ public enum InternalRoleName
 {
     Admin = 1,
     Manager = 2,
-    Supervisor = 3,
+    TeamLeader = 3,
     User = 4,
 }
 

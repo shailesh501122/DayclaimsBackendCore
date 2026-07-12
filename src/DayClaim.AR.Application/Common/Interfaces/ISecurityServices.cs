@@ -46,7 +46,7 @@ public interface ICurrentUserService
     IReadOnlyCollection<string> Roles { get; }
     IReadOnlyCollection<Guid> ClientOrganizationIds { get; }
     bool IsInRole(string role);
-    /// <summary>True for internal-staff roles (Super Admin/Site Admin/Supervisor/User) that are not scoped to a single client org.</summary>
+    /// <summary>True for internal-staff roles (Admin/Manager/Team Leader/User) that are not scoped to a single client org.</summary>
     bool IsInternalStaff { get; }
 }
 

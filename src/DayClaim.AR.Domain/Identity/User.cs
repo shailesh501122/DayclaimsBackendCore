@@ -26,6 +26,7 @@ public class User : AuditableEntity
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<UserOrganization> UserOrganizations { get; set; } = new List<UserOrganization>();
+    public ICollection<UserMenuAccess> MenuAccess { get; set; } = new List<UserMenuAccess>();
 }
 
 public class UserRole
@@ -42,6 +43,21 @@ public class UserOrganization
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
     public Guid ClientOrganizationId { get; set; }
+}
+
+/// <summary>
+/// Grants a non-Admin user visibility into one frontend menu item, identified
+/// by its route path (e.g. "/wfm/wfm-setup") — an opaque string from the
+/// backend's perspective; the frontend's menu catalog is the source of truth
+/// for what a path corresponds to. Admin always sees every menu and has no
+/// rows here. Absence of a row means no access — a freshly created Manager/
+/// Team Leader/User account sees nothing until an Admin assigns menus.
+/// </summary>
+public class UserMenuAccess
+{
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
+    public string MenuPath { get; set; } = string.Empty;
 }
 
 public class RefreshToken : AuditableEntity

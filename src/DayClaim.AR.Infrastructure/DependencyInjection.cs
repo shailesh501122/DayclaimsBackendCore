@@ -71,6 +71,12 @@ public static class DependencyInjection
             .AddJwtBearer(options =>
             {
                 options.RequireHttpsMetadata = !string.Equals(configuration["ASPNETCORE_ENVIRONMENT"], "Development", StringComparison.OrdinalIgnoreCase);
+                // Without this, JwtSecurityTokenHandler silently remaps short claim
+                // types (e.g. "sub") to legacy XML-namespace URIs on the resulting
+                // ClaimsPrincipal, so code reading JwtRegisteredClaimNames.Sub (like
+                // ICurrentUserService.UserId) finds nothing and gets a false null —
+                // no error, just a wrong answer. Keep claims exactly as issued.
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -87,10 +93,10 @@ public static class DependencyInjection
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy(PolicyNames.InternalStaff, p => p.RequireRole("Admin", "Manager", "Supervisor", "User"))
+            .AddPolicy(PolicyNames.InternalStaff, p => p.RequireRole("Admin", "Manager", "Team Leader", "User"))
             .AddPolicy(PolicyNames.AdminOnly, p => p.RequireRole("Admin"))
             .AddPolicy(PolicyNames.UserManagement, p => p.RequireRole("Admin", "Manager"))
-            .AddPolicy(PolicyNames.SupervisorOrAbove, p => p.RequireRole("Admin", "Manager", "Supervisor"))
+            .AddPolicy(PolicyNames.SupervisorOrAbove, p => p.RequireRole("Admin", "Manager", "Team Leader"))
             .AddPolicy(PolicyNames.AnyAuthenticatedUser, p => p.RequireAuthenticatedUser());
 
         return services;

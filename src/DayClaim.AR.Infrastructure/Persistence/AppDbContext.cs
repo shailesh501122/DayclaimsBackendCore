@@ -26,6 +26,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserOrganization> UserOrganizations => Set<UserOrganization>();
+    public DbSet<UserMenuAccess> UserMenuAccess => Set<UserMenuAccess>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<ImporterConfig> ImporterConfigs => Set<ImporterConfig>();
