@@ -47,7 +47,14 @@ fi
 ENV_FILE="$BACKEND_DIR/deploy/.env"
 if [ ! -f "$ENV_FILE" ]; then
   echo "==> Generating $ENV_FILE with fresh random secrets"
-  read -rp "Public IP or domain the site will be served from (e.g. http://137.23.41.70): " PUBLIC_ORIGIN
+  # Piping this script through `curl | bash` consumes stdin with the script
+  # itself, so a plain `read` here silently gets nothing — read from the
+  # controlling terminal explicitly instead.
+  read -rp "Public IP or domain the site will be served from (e.g. http://137.23.41.70): " PUBLIC_ORIGIN < /dev/tty
+  if [ -z "$PUBLIC_ORIGIN" ]; then
+    echo "==> No value entered — refusing to generate a .env with an empty PUBLIC_ORIGIN." >&2
+    exit 1
+  fi
   cat > "$ENV_FILE" <<EOF
 POSTGRES_USER=dayclaim_ar
 POSTGRES_PASSWORD=$(openssl rand -base64 24)
