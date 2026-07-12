@@ -7,6 +7,13 @@ namespace DayClaim.AR.Api.Controllers;
 /// <summary>Backs the frontend's Inventory/Assignment/Rule-Engine summary & dashboard modules.</summary>
 public class DashboardController(ISender mediator) : ApiControllerBase(mediator)
 {
+    [HttpGet("client-organizations")]
+    public async Task<ActionResult<IReadOnlyCollection<ClientOrganizationDto>>> ClientOrganizations(CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetClientOrganizationsQuery(), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("inventory-summary")]
     public async Task<ActionResult<InventorySummaryDto>> InventorySummary([FromQuery] Guid clientOrganizationId, CancellationToken cancellationToken)
     {
