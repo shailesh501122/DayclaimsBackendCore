@@ -20,7 +20,11 @@ builder.Host.UseSerilog((context, config) => config
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums as their name ("Global", not 1) — a plain integer forces every
+    // API consumer to hardcode the enum's numeric ordering just to read a
+    // response, and silently breaks if the enum is ever reordered.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddApiVersioning(options =>
