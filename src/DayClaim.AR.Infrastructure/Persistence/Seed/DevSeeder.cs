@@ -56,22 +56,22 @@ public static class DevSeeder
         var manager = NewUser("sanjay.k", "sanjay.k@dayclaim.ai", "Sanjay Kulkarni", passwordHasher, now);
         manager.UserRoles.Add(new UserRole { UserId = manager.Id, User = manager, RoleId = RoleByName("Manager").Id });
         manager.UserOrganizations.Add(new UserOrganization { UserId = manager.Id, User = manager, ClientOrganizationId = clientOrg.Id });
-        Grant(manager, "/dashboard/business-metrics", "/rule-engine", "/wfm/wfm-setup", "/role-management/user-role-management", "/other/login-credentials");
+        Grant(manager, "/dashboard", "/rule-engine", "/importer/importer-setup", "/notes/scenario-master", "/role-management/user-role-management", "/other/login-credentials");
 
         var teamLeader = NewUser("vikram.rao", "vikram.rao@dayclaim.ai", "Vikram Rao", passwordHasher, now);
         teamLeader.UserRoles.Add(new UserRole { UserId = teamLeader.Id, User = teamLeader, RoleId = RoleByName("Team Leader").Id });
         teamLeader.UserOrganizations.Add(new UserOrganization { UserId = teamLeader.Id, User = teamLeader, ClientOrganizationId = clientOrg.Id });
-        Grant(teamLeader, "/dashboard/business-metrics", "/wfm/manual-assignment-approval", "/wfm/assignment-approval");
+        Grant(teamLeader, "/dashboard", "/rule-engine");
 
         var agent1 = NewUser("priya.s", "priya.s@dayclaim.ai", "Priya S", passwordHasher, now);
         agent1.UserRoles.Add(new UserRole { UserId = agent1.Id, User = agent1, RoleId = RoleByName("User").Id });
         agent1.UserOrganizations.Add(new UserOrganization { UserId = agent1.Id, User = agent1, ClientOrganizationId = clientOrg.Id });
-        Grant(agent1, "/dashboard/business-metrics");
+        Grant(agent1, "/dashboard");
 
         var agent2 = NewUser("rahul.m", "rahul.m@dayclaim.ai", "Rahul Menon", passwordHasher, now);
         agent2.UserRoles.Add(new UserRole { UserId = agent2.Id, User = agent2, RoleId = RoleByName("User").Id });
         agent2.UserOrganizations.Add(new UserOrganization { UserId = agent2.Id, User = agent2, ClientOrganizationId = clientOrg.Id });
-        Grant(agent2, "/dashboard/business-metrics");
+        Grant(agent2, "/dashboard");
 
         db.Users.AddRange(admin, manager, teamLeader, agent1, agent2);
 
