@@ -162,6 +162,26 @@ var migrationTask = Task.Run(async () =>
     {
         await DayClaim.AR.Infrastructure.Persistence.Seed.DevSeeder.SeedAsync(scope.ServiceProvider);
     }
+
+    // EF Core compiles a query's expression tree into a reusable plan the
+    // first time it runs — on a memory-constrained container this first
+    // compilation can take tens of seconds, and without this warm-up the
+    // very first real user to log in after a (re)start is the one who pays
+    // that cost, sometimes past a reverse proxy's timeout. Run the exact
+    // query shape LoginCommand uses here, in the background, so nobody's
+    // login request has to eat it.
+    try
+    {
+        await db.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .Include(u => u.UserOrganizations)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Username == "__warmup__" && !u.IsDeleted);
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogWarning(ex, "EF Core query warm-up failed (non-fatal)");
+    }
 });
 
 var runTask = app.RunAsync();
