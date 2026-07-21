@@ -20,6 +20,11 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Default is 10m — too short for a Docker build on this small VM,
+          # especially while an old container from the previous compose file
+          # (e.g. RabbitMQ, pegged near 150% CPU) is still running and
+          # starving the build of CPU until this deploy finishes and replaces it.
+          command_timeout: 30m
           script: |
             set -euo pipefail
             cd /opt/dayclaim/backend
