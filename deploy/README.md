@@ -67,6 +67,42 @@ Rotate a secret: edit `/opt/dayclaim/backend/deploy/.env` on the server,
 then `docker compose -f docker-compose.prod.yml up -d` to apply it (`.env`
 is gitignored and never touched by deploys).
 
+## Self-heal watchdog
+
+A systemd timer (`dayclaim-watchdog.timer`) runs `watchdog.sh` every 2
+minutes: it curls the stack's own `/health/live` endpoint and, if that
+fails, runs `docker compose up -d` to restart whatever crashed. This is
+installed automatically by `server-setup.sh` on a fresh box.
+
+To add it to a box that's already running (retrofit):
+
+```bash
+ssh ubuntu@<server-ip>
+cd /opt/dayclaim/backend && git pull
+cd deploy
+sudo cp dayclaim-watchdog.service dayclaim-watchdog.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now dayclaim-watchdog.timer
+```
+
+Check it's running and see its history:
+
+```bash
+systemctl status dayclaim-watchdog.timer
+tail -f /var/log/dayclaim-watchdog.log
+```
+
+**What this does NOT fix**: `ERR_ADDRESS_UNREACHABLE` (as opposed to a
+timeout or a 502/504) usually means the VM itself is down or its public
+IP is gone — the watchdog can't help because nothing on the box is running
+to heal it. Check the instance is in "Running" state in the Oracle Cloud
+Console (Compute → Instances). If it keeps happening, it's most likely
+Oracle's Always Free idle-instance reclamation — see "Sizing" below, and
+consider reserving a static/reserved public IP (Networking → IP Management)
+so a reboot never changes your address. Pair the watchdog with a free
+external monitor (e.g. UptimeRobot hitting `http://<server-ip>/health`)
+so you get alerted the moment the *box*, not just a container, goes dark.
+
 ## Adding a real domain + HTTPS later
 
 Once you point a domain's A record at the server, swap `deploy/nginx/nginx.conf`

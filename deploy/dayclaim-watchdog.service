@@ -1,0 +1,9 @@
+[Unit]
+Description=DayClaim stack health watchdog (one-shot check-and-heal)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/bin/bash /opt/dayclaim/backend/deploy/watchdog.sh

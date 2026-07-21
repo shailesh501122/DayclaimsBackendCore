@@ -76,6 +76,11 @@ echo "==> Building and starting the stack (this can take a few minutes on first 
 cd "$BACKEND_DIR/deploy"
 sudo docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
+echo "==> Installing self-heal watchdog (restarts the stack if /health/live stops responding)"
+sudo cp dayclaim-watchdog.service dayclaim-watchdog.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now dayclaim-watchdog.timer
+
 echo "==> Done. Check status with:"
 echo "    cd $BACKEND_DIR/deploy && sudo docker compose -f docker-compose.prod.yml ps"
 echo "==> Note: your shell session needs to log out/in once for the docker"
