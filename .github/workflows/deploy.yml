@@ -26,5 +26,5 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             cd deploy
-            docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+            docker compose -f docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             docker image prune -f

@@ -23,26 +23,10 @@ services:
       - key: SeedDemoData
         value: "false"
       # Set these in the Render dashboard (Environment tab) rather than here —
-      # they depend on which Postgres/Redis/RabbitMQ instances you provision.
+      # they depend on which Postgres/Redis instances you provision.
       - key: ConnectionStrings__Postgres
         sync: false
       - key: ConnectionStrings__Redis
-        sync: false
-      - key: RabbitMq__Host
-        sync: false
-      - key: RabbitMq__Username
-        sync: false
-      - key: RabbitMq__Password
-        sync: false
-      # For a hosted broker like CloudAMQP: VirtualHost is the vhost name from
-      # your instance's AMQP URL (amqps://user:pass@host/VHOST — NOT "/"),
-      # Port is 5671, UseTls is "true". Leave all three unset for the local
-      # Docker Compose stack (defaults: "/", 5672, false).
-      - key: RabbitMq__VirtualHost
-        sync: false
-      - key: RabbitMq__Port
-        sync: false
-      - key: RabbitMq__UseTls
         sync: false
       - key: Jwt__Issuer
         value: dayclaim-ar-api
@@ -57,35 +41,4 @@ services:
       - key: Encryption__BlindIndexKey
         generateValue: true
       - key: Cors__AllowedOrigins__0
-        sync: false
-
-  - type: web
-    name: dayclaim-ar-gateway
-    runtime: docker
-    dockerfilePath: ./docker/Dockerfile.gateway
-    dockerContext: .
-    plan: free
-    healthCheckPath: /gateway/health
-    envVars:
-      - key: ASPNETCORE_ENVIRONMENT
-        value: Production
-      - key: ASPNETCORE_URLS
-        value: http://+:8000
-      # ocelot.json's default downstream host ("ar-api") only resolves inside
-      # Docker Compose's network — on Render, the AR API is a separate public
-      # service, so route to it by its real hostname instead.
-      - key: ArApi__Host
-        value: dayclaim-ar-api.onrender.com
-      - key: ArApi__Port
-        value: "443"
-      - key: ArApi__Scheme
-        value: https
-      - key: Jwt__Issuer
-        value: dayclaim-ar-api
-      - key: Jwt__Audience
-        value: dayclaim-ar-clients
-      # Must match dayclaim-ar-api's Jwt__SigningKey exactly, or the gateway
-      # will reject every token the API issues. Copy it from that service's
-      # Environment tab after its first deploy generates it.
-      - key: Jwt__SigningKey
         sync: false

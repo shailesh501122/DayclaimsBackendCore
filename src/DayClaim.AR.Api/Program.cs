@@ -58,7 +58,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Global per-client-IP throttle — Ocelot applies a second layer at the gateway (deck slide 15).
+// Global per-client-IP throttle — the only rate-limiting layer now that there's no separate gateway.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

@@ -3,10 +3,8 @@ using DayClaim.AR.Application.Common.Authorization;
 using DayClaim.AR.Application.Common.Interfaces;
 using DayClaim.AR.Infrastructure.Caching;
 using DayClaim.AR.Infrastructure.Common;
-using DayClaim.AR.Infrastructure.Messaging;
 using DayClaim.AR.Infrastructure.Persistence;
 using DayClaim.AR.Infrastructure.Security;
-using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,30 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
         services.AddSingleton<ICacheService, RedisCacheService>();
 
-        services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
-        services.AddMassTransit(bus =>
-        {
-            bus.UsingRabbitMq((context, cfg) =>
-            {
-                // VirtualHost defaults to "/" for local Docker Compose's stock RabbitMQ image,
-                // but hosted brokers (e.g. CloudAMQP) assign a per-account vhost — must be
-                // configurable, not hardcoded, or every publish fails against a real provider.
-                var virtualHost = configuration["RabbitMq:VirtualHost"] ?? "/";
-                var port = configuration.GetValue<ushort?>("RabbitMq:Port");
-                var useTls = configuration.GetValue("RabbitMq:UseTls", false);
-
-                cfg.Host(configuration["RabbitMq:Host"] ?? "localhost", port ?? 5672, virtualHost, h =>
-                {
-                    h.Username(configuration["RabbitMq:Username"] ?? "guest");
-                    h.Password(configuration["RabbitMq:Password"] ?? "guest");
-                    if (useTls)
-                    {
-                        h.UseSsl(ssl => ssl.Protocol = System.Security.Authentication.SslProtocols.Tls12);
-                    }
-                });
-                cfg.ConfigureEndpoints(context);
-            });
-        });
+        services.AddScoped<IEventPublisher, LoggingEventPublisher>();
 
         var jwtSection = configuration.GetSection(JwtSettings.SectionName);
         var signingKey = jwtSection["SigningKey"] ?? string.Empty;

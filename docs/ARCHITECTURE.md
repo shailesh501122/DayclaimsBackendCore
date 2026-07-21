@@ -47,36 +47,43 @@ DayClaim.AR.Domain           entities, enums, value objects — no framework dep
    ▲
 DayClaim.AR.Application       CQRS (MediatR) commands/queries, validators (FluentValidation),
    ▲                        interfaces the Infrastructure layer implements
-DayClaim.AR.Infrastructure    EF Core + Npgsql, JWT, field encryption, Redis, MassTransit/RabbitMQ
+DayClaim.AR.Infrastructure    EF Core + Npgsql, JWT, field encryption, Redis
    ▲
 DayClaim.AR.Api               ASP.NET Core Web API — controllers, authZ policies, middleware
-DayClaim.AR.Gateway           Ocelot API Gateway — JWT validation + rate limiting + routing
 ```
 
 Dependencies point inward only: Domain has no references; Application
-depends on Domain; Infrastructure depends on Application+Domain; Api and
-Gateway depend on the layers below them. This is what makes "swap Postgres
-for something else" or "swap RabbitMQ for Kafka" a change confined to
-Infrastructure.
+depends on Domain; Infrastructure depends on Application+Domain; Api depends
+on the layers below it. This is what makes "swap Postgres for something
+else" a change confined to Infrastructure.
+
+Deliberately monolithic, single-process deployment: there is no separate
+API gateway and no message broker. An earlier revision ran an Ocelot
+gateway in front of the API and MassTransit/RabbitMQ for event publishing,
+but the gateway added a network hop the frontend never actually used (nginx
+routed straight to the API already) and RabbitMQ had zero consumers — both
+were pure resource cost on a single small VM, and were removed. `IEventPublisher`
+still exists as an interface (see `Infrastructure/Common/LoggingEventPublisher.cs`)
+so a real broker can be reintroduced later without touching call sites, if
+an actual async consumer shows up.
 
 ## 3. Request flow (local Docker Compose)
 
 ```
-Client ──▶ Gateway (Ocelot, :8000)  ── JWT validate + rate limit ──▶ Api (:8080)
-                                                                        │
-                                                          ┌─────────────┼──────────────┐
-                                                          ▼             ▼              ▼
-                                                     PostgreSQL       Redis         RabbitMQ
-                                                     (EF Core)      (cache)      (MassTransit)
+Client ──▶ Api (:8080)
+              │
+        ┌─────┼──────┐
+        ▼            ▼
+   PostgreSQL       Redis
+   (EF Core)       (cache)
 ```
 
 In the target AWS design (deck slides 13-18) this becomes:
-`CloudFront + WAF → ALB → Ocelot on EKS → AR microservices on EKS`, with
-Aurora PostgreSQL (OLTP), Redshift (OLAP via CDC+Glue), OpenSearch (full-text
-search), ElastiCache (Redis), AmazonMQ (RabbitMQ-compatible), and Valkey/MSK
-streams per RCM report. The local Compose stack is a topology-preserving
-substitute: same protocols (Postgres wire protocol, Redis protocol, AMQP),
-same layering, just single-node and un-managed.
+`CloudFront + WAF → ALB → AR API on EKS`, with Aurora PostgreSQL (OLTP),
+Redshift (OLAP via CDC+Glue), OpenSearch (full-text search), and
+ElastiCache (Redis). A gateway and message broker (AmazonMQ/Kafka) can be
+reintroduced there if/when the API is actually split into multiple
+services — neither is needed while it's one monolith.
 
 ## 4. Module registry pattern (mirrors the frontend)
 
@@ -131,8 +138,7 @@ file needs to change.
 cd docker
 cp .env.example .env    # fill in real values — see comments in the file
 docker compose up -d --build
-# API:      http://localhost:8080/swagger
-# Gateway:  http://localhost:8000/gateway/...
+# API: http://localhost:8080/swagger
 ```
 
 Seeded demo accounts (opt-in via `SeedDemoData=true` — see

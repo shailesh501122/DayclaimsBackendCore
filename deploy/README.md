@@ -1,9 +1,9 @@
 # Self-hosted deployment (Oracle Cloud / any Ubuntu box)
 
-Runs the full stack — Postgres, Redis, RabbitMQ, the AR API, the Ocelot
-gateway, and an nginx reverse proxy that also serves the frontend's static
-build — as one Docker Compose stack on a single server, with GitHub Actions
-redeploying automatically on every push to `main`.
+Runs the full stack — Postgres, Redis, the AR API (a single monolith; no
+separate gateway service), and an nginx reverse proxy that also serves the
+frontend's static build — as one Docker Compose stack on a single server,
+with GitHub Actions redeploying automatically on every push to `main`.
 
 The frontend is served **same-origin** with the API (via the nginx reverse
 proxy below), which is why this setup doesn't need any of the CORS
@@ -46,8 +46,8 @@ GitHub's encrypted secrets field.
 
 - **Backend** (`DayclaimsBackendCore`, this repo): `.github/workflows/deploy.yml`
   SSHes in, hard-resets `/opt/dayclaim/backend` to the latest `main`, and runs
-  `docker compose up -d --build` — Postgres/Redis/RabbitMQ data volumes are
-  untouched; only the app containers rebuild.
+  `docker compose up -d --build` — Postgres/Redis data volumes are untouched;
+  only the app containers rebuild.
 - **Frontend** (`dayclaim` repo): its own workflow builds the Vite app with
   `VITE_API_BASE_URL` set to the server's own origin (same-origin as the
   page, so no CORS) and rsyncs `dist/` into `/opt/dayclaim/frontend/dist`,

@@ -110,11 +110,11 @@ refuses to start without real values in `.env` (which is gitignored).
 
 ## 5. Availability / abuse controls
 
-- **Rate limiting** at two layers: the Ocelot gateway (per-route limits in
-  `ocelot.json`) and a per-IP fixed-window limiter in the API itself
-  (`Program.cs`) — defense in depth if the gateway is ever bypassed.
-- **Non-root containers**: both `Dockerfile.api` and `Dockerfile.gateway`
-  run as an unprivileged `dayclaim` user, not root.
+- **Rate limiting**: a per-IP fixed-window limiter in the API itself
+  (`Program.cs`). (There is no separate gateway layer — see
+  ARCHITECTURE.md §2 for why one isn't run on this single-box deployment.)
+- **Non-root containers**: `Dockerfile.api` runs as an unprivileged
+  `dayclaim` user, not root.
 - **Health checks** on every service in `docker-compose.yml`, so a
   dependency that isn't actually ready (Postgres still initializing, Redis
   not accepting auth yet) blocks dependent containers from starting instead
@@ -160,7 +160,7 @@ without WAF/ALB/CloudFront in front of it.
 - OpenSearch/Redshift pieces are unimplemented (see ARCHITECTURE.md §6),
   so there's nothing to secure there yet.
 - No WAF/CloudFront in local Compose — `SecurityHeadersMiddleware` and the
-  gateway's rate limiter are the local stand-ins; a real deployment still
+  API's own rate limiter are the local stand-ins; a real deployment still
   needs the AWS WAF layer from the target design.
 - No automated dependency/vulnerability scanning (SAST/DAST) wired into a
   CI/CD pipeline yet — the deck calls for this in CI/CD (slide 15); this

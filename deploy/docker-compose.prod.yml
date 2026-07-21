@@ -33,20 +33,6 @@ services:
       timeout: 5s
       retries: 10
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    restart: always
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-dayclaim_ar}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
-    volumes:
-      - dayclaim_rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   ar-api:
     build:
       context: ..
@@ -56,8 +42,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -72,9 +56,6 @@ services:
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in .env (32+ chars)}
       Encryption__DataKey: ${ENCRYPTION_DATA_KEY:?set ENCRYPTION_DATA_KEY in .env (base64, 32 bytes)}
       Encryption__BlindIndexKey: ${ENCRYPTION_BLIND_INDEX_KEY:?set ENCRYPTION_BLIND_INDEX_KEY in .env (base64, 32 bytes)}
-      RabbitMq__Host: rabbitmq
-      RabbitMq__Username: ${RABBITMQ_USER:-dayclaim_ar}
-      RabbitMq__Password: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
       # Frontend is served same-origin via the nginx proxy below, so this is
       # mostly a defense-in-depth backstop, not what makes login work.
       Cors__AllowedOrigins__0: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN in .env, e.g. http://137.23.41.70}
@@ -84,36 +65,11 @@ services:
       timeout: 5s
       retries: 10
 
-  gateway:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.gateway
-    restart: always
-    depends_on:
-      ar-api:
-        condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:8000
-      Jwt__Issuer: dayclaim-ar-api
-      Jwt__Audience: dayclaim-ar-clients
-      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in .env (32+ chars)}
-      # ocelot.json's default downstream ("ar-api":8080) is correct as-is
-      # here since both containers share this compose network — no ArApi__*
-      # override needed (that's only for split-host platforms like Render).
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8000/gateway/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
   nginx:
     image: nginx:1.27-alpine
     restart: always
     depends_on:
       ar-api:
-        condition: service_healthy
-      gateway:
         condition: service_healthy
     ports:
       - "80:80"
@@ -126,4 +82,3 @@ services:
 volumes:
   dayclaim_postgres_data:
   dayclaim_redis_data:
-  dayclaim_rabbitmq_data:

@@ -34,7 +34,8 @@ public interface ICacheService
     Task RemoveAsync(string key, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Publishes domain/integration events onto the message broker (AmazonMQ/RabbitMQ in the target design).</summary>
+/// <summary>Publishes domain/integration events. In-process logging today (single-box
+/// monolith, no consumers yet) — swap for a real broker if/when something subscribes.</summary>
 public interface IEventPublisher
 {
     Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) where T : class;

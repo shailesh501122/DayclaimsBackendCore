@@ -1,9 +1,10 @@
 # DayClaim AR Backend
 
 .NET 8 backend for the **AR (Account Receivables)** module of the DayClaim
-RCM platform — a microservices-based, event-driven, HIPAA-aligned redesign
-of a legacy AR workflow (React SPA + .NET 8 microservices). See
-`docs/ARCHITECTURE.md` and `docs/SECURITY.md` for the full design.
+RCM platform — a monolithic, HIPAA-aligned redesign of a legacy AR workflow
+(single ASP.NET Core Web API behind nginx; no separate gateway or message
+broker). See `docs/ARCHITECTURE.md` and `docs/SECURITY.md` for the full
+design.
 
 ## Quick start (Docker Compose)
 
@@ -15,8 +16,6 @@ docker compose up -d --build
 ```
 
 - API + Swagger: http://localhost:8080/swagger
-- Gateway (Ocelot): http://localhost:8000/gateway/...
-- RabbitMQ management UI: http://localhost:15672
 
 In `Development` (the Compose default), the API auto-applies EF Core
 migrations and seeds demo data on startup (set `SeedDemoData=true`, the
@@ -47,20 +46,19 @@ curl -s http://localhost:8080/api/v1/rule-engine/rules \
 src/
   DayClaim.AR.Domain          entities, enums, value objects
   DayClaim.AR.Application     CQRS commands/queries, validation, interfaces
-  DayClaim.AR.Infrastructure  EF Core/Postgres, JWT, encryption, Redis, RabbitMQ
-  DayClaim.AR.Api             ASP.NET Core Web API
-  DayClaim.AR.Gateway         Ocelot API Gateway
+  DayClaim.AR.Infrastructure  EF Core/Postgres, JWT, encryption, Redis
+  DayClaim.AR.Api             ASP.NET Core Web API (the whole backend — no gateway)
 tests/
   DayClaim.AR.UnitTests
 docker/
-  Dockerfile.api, Dockerfile.gateway, docker-compose.yml, .env.example
+  Dockerfile.api, docker-compose.yml, .env.example
 docs/
   ARCHITECTURE.md, SECURITY.md
 ```
 
 ## Local development without Docker
 
-Requires the .NET 8 SDK plus a local Postgres/Redis/RabbitMQ (or point the
+Requires the .NET 8 SDK plus a local Postgres/Redis (or point the
 connection strings in `appsettings.Development.json` at your own):
 
 ```bash
